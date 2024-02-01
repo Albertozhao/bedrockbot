@@ -8,9 +8,9 @@ from langchain.prompts import PromptTemplate
 os.environ["AWS_PROFILE"] = "default"  # gotta tell it which AWS profile to use
 
 # let's get the Bedrock client ready
-bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1')
+bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1') # this region runs all available models that Bedrock can access
 
-modelID = "amazon.titan-text-express-v1"  # this is the cool model we're using
+modelID = "amazon.titan-text-express-v1"  # this is the model we're using
 
 # setting up our Bedrock model, tweaking some stuff
 llm = Bedrock(model_id=modelID, client=bedrock_client,
