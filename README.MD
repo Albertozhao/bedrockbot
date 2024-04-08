@@ -1,4 +1,4 @@
-# Test Bedrock Models via Local ChatBot
+# Test Bedrock Models via Local ChatBot using Streamlit
 
 ### Step 1
 Install boto3 (the AWS SDK for Python), Langchain, and Streamlit:
