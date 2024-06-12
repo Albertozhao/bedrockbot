@@ -4,34 +4,51 @@ import streamlit as st
 from langchain.llms.bedrock import Bedrock
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
+import time
 
-os.environ["AWS_PROFILE"] = "default"  # gotta tell it which AWS profile to use
+os.environ["AWS_PROFILE"] = "default"
 
-# let's get the Bedrock client ready
-bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1') # this region runs all available models that Bedrock can access
+# Initialize the Bedrock client
+bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1')
 
-modelID = "amazon.titan-text-express-v1"  # this is the model we're using
+# Add model selection here
+model_options = {
+    "Claude 2": "anthropic.claude-v2:1",
+    "Titan Text Express": "amazon.titan-text-express-v1"
+}
+selected_model_name = st.sidebar.selectbox("Choose Model", list(model_options.keys()))
+modelID = model_options[selected_model_name]
 
-# setting up our Bedrock model, tweaking some stuff
-llm = Bedrock(model_id=modelID, client=bedrock_client,
-              model_kwargs={"temperature": 0.4, "topP": 0.4, "maxTokenCount": 2048})
+if selected_model_name == "Claude 2":
+    model_kwargs = {"temperature": 0.4}
+elif selected_model_name == "Titan Text Express":
+    model_kwargs = {"temperature": 0.4, "topP": 0.4, "maxTokenCount": 2048}
 
-def my_chatbot(lang, txt):  # shortened variable names, cuz why not?
+llm = Bedrock(model_id=modelID, client=bedrock_client, model_kwargs=model_kwargs)
+
+def my_chatbot(lang, txt):
     prompt_template = "You are a chatbot. You are in {language}.\n\n{freeform_text}"
     prompt = PromptTemplate(input_variables=["language", "freeform_text"], template=prompt_template)
 
+    
+    start_time = time.time()
+
     bedrock_chain = LLMChain(llm=llm, prompt=prompt)
+    result = bedrock_chain({'language': lang, 'freeform_text': txt})['text']
 
-    return bedrock_chain({'language': lang, 'freeform_text': txt})['text']
+    end_time = time.time()
+    
+    elapsed_time = end_time - start_time
 
-# Streamlit stuff starts here
+    return result, elapsed_time
+
+# Streamlit stuff
 st.title("Ask a legally-compliant AWS friend")
 
 lang = st.sidebar.selectbox("Choose Language", ["english", "spanish", "chinese"])
-
-if lang:
-    user_question = st.sidebar.text_area("What do you want to ask?", max_chars=1000)
+user_question = st.sidebar.text_area("What do you want to ask?", max_chars=1000)
 
 if user_question:
-    answer = my_chatbot(lang, user_question)
+    answer, elapsed_time = my_chatbot(lang, user_question)
     st.write(answer)
+    st.write(f"Response time: {elapsed_time:.2f} seconds")
